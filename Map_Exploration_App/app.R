@@ -39,6 +39,12 @@ ui <- fluidPage(
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
+            radioButtons(
+                inputId = "dataType",
+                label = "Type of Data",
+                choices = c("Deaths", "Confirmed", "Recovered"),
+                selected = "Deaths"
+            ),
             sliderInput("Dates",
                         "Date",
                         min = as.Date("2020-1-22","%Y-%m-%d"),
@@ -66,10 +72,19 @@ server <- function(input, output) {
         # print(as.character(format(input$Dates, "%m-%d-%Y")))
         # print(input$Dates)
         subsetted <- dataByCountry[as.character(dataByCountry$Date) == input$Dates,]
+        if(input$dataType == "Deaths"){
+            z <- subsetted$Deaths
+        }
+        else if(input$dataType == "Confirmed"){
+            z <- subsetted$Confirmed
+        }
+        else{
+            z <- subsetted$Recovered
+        }
         return(plot_ly(subsetted, 
                        type='choropleth', 
                        locations=subsetted$CODE, 
-                       z=subsetted$Deaths, 
+                       z=z, 
                        text=subsetted$COUNTRY, 
                        colors = colorRampPalette(c("white", "black"))(50),
                        #colorscale="Greys",
