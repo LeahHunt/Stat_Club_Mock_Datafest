@@ -17,25 +17,22 @@ data <- read.csv("COVID Data.csv")
 df <- read.csv("https://raw.githubusercontent.com/plotly/datasets/master/2014_world_gdp_with_codes.csv")
 colnames(data) <- c("Index", "Date", "State", "COUNTRY", "Update", "Confirmed", "Deaths", "Recovered")
 
-for(x in 1:nrow(data)){
-    if(data$COUNTRY[x] == "Mainland China"){
-        data$COUNTRY[x] <- "China"
-    }
-    if(data$COUNTRY[x] == "US"){
-        data$COUNTRY[x] <- "United States"
-    }
-    #data$Date[x] <- paste0("0", data$Date[x]) 
-}
+data$COUNTRY[data$COUNTRY == "Mainland China"] <- "China"
+data$COUNTRY[data$COUNTRY == "US"] <- "United States"
+# for(x in 1:nrow(data)){
+#     if(data$COUNTRY[x] == "Mainland China"){
+#         data$COUNTRY[x] <- "China"
+#     }
+#     if(data$COUNTRY[x] == "US"){
+#         data$COUNTRY[x] <- "United States"
+#     }
+#     #data$Date[x] <- paste0("0", data$Date[x]) 
+# }
 dataByCountry <- data %>% group_by(COUNTRY, Date) %>% summarise(Confirmed = sum(Confirmed), Recovered = sum(Recovered), Deaths = sum(Deaths))
 dataByCountry <- merge(dataByCountry, df)
 dataByCountry$Date <- as.Date(dataByCountry$Date,format="%m/%d/%Y") 
 dataByCountry <- dataByCountry %>% group_by(COUNTRY) %>% arrange(Date, .by_group = TRUE)
 
-
-# for(country in unique(dataByCountry$COUNTRY)){
-#     subData <- dataByCountry[COUNTRY == country,]
-#     arrange(subData, )
-# }
 dataByCountry$dailyDeaths <- c(dataByCountry$Deaths[1], dataByCountry$Deaths[2:length(dataByCountry$Deaths)] - dataByCountry$Deaths[1:length(dataByCountry$Deaths)-1])
 dataByCountry$dailyConfirmed <- c(dataByCountry$Confirmed[1], dataByCountry$Confirmed[2:length(dataByCountry$Confirmed)] - dataByCountry$Confirmed[1:length(dataByCountry$Confirmed)-1])
 dataByCountry$dailyRecovered <- c(dataByCountry$Recovered[1], dataByCountry$Recovered[2:length(dataByCountry$Recovered)] - dataByCountry$Recovered[1:length(dataByCountry$Recovered)-1])
