@@ -29,6 +29,26 @@ for(x in 1:nrow(data)){
 dataByCountry <- data %>% group_by(COUNTRY, Date) %>% summarise(Confirmed = sum(Confirmed), Recovered = sum(Recovered), Deaths = sum(Deaths))
 dataByCountry <- merge(dataByCountry, df)
 dataByCountry$Date <- as.Date(dataByCountry$Date,format="%m/%d/%Y") 
+dataByCountry <- dataByCountry %>% group_by(COUNTRY) %>% arrange(Date, .by_group = TRUE)
+
+
+# for(country in unique(dataByCountry$COUNTRY)){
+#     subData <- dataByCountry[COUNTRY == country,]
+#     arrange(subData, )
+# }
+dataByCountry$dailyDeaths <- c(dataByCountry$Deaths[1], dataByCountry$Deaths[2:length(dataByCountry$Deaths)] - dataByCountry$Deaths[1:length(dataByCountry$Deaths)-1])
+dataByCountry$dailyConfirmed <- c(dataByCountry$Confirmed[1], dataByCountry$Confirmed[2:length(dataByCountry$Confirmed)] - dataByCountry$Confirmed[1:length(dataByCountry$Confirmed)-1])
+dataByCountry$dailyRecovered <- c(dataByCountry$Recovered[1], dataByCountry$Recovered[2:length(dataByCountry$Recovered)] - dataByCountry$Recovered[1:length(dataByCountry$Recovered)-1])
+
+# Alternative of replacing the "end points" with the cumulative, but I thought that could be misleading
+# dataByCountry$dailyRecovered[dataByCountry$dailyRecovered<0] <- dataByCountry$Recovered[dataByCountry$dailyRecovered<0]
+# dataByCountry$dailyConfirmed[dataByCountry$dailyConfirmed<0] <- dataByCountry$Confirmed[dataByCountry$dailyConfirmed<0]
+# dataByCountry$dailyDeaths[dataByCountry$dailyDeaths<0] <- dataByCountry$Deaths[dataByCountry$dailyDeaths<0]
+
+
+dataByCountry$dailyRecovered[dataByCountry$dailyRecovered<0] <- NA
+dataByCountry$dailyConfirmed[dataByCountry$dailyConfirmed<0] <- NA
+dataByCountry$dailyDeaths[dataByCountry$dailyDeaths<0] <- NA
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -39,6 +59,12 @@ ui <- fluidPage(
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
+            radioButtons(
+                inputId = "cumulative",
+                label = "Cumulative or Daily",
+                choices = c("Cumulative", "Daily"),
+                selected = "Cumulative"
+            ),
             radioButtons(
                 inputId = "dataType",
                 label = "Type of Data",
@@ -71,7 +97,11 @@ server <- function(input, output) {
         # print(as.character(dataByCountry$Date))
         # print(as.character(format(input$Dates, "%m-%d-%Y")))
         # print(input$Dates)
+        # print(min(subsetted$dailyConfirmed))
+        # print(min(subsetted$dailyDeaths))
+        # print(min(subsetted$dailyRecovered))
         subsetted <- dataByCountry[as.character(dataByCountry$Date) == input$Dates,]
+        if(input$cumulative == "Cumulative"){
         if(input$dataType == "Deaths"){
             z <- subsetted$Deaths
         }
@@ -80,6 +110,17 @@ server <- function(input, output) {
         }
         else{
             z <- subsetted$Recovered
+        }}
+        else{
+            if(input$dataType == "Deaths"){
+                z <- subsetted$dailyDeaths
+            }
+            else if(input$dataType == "Confirmed"){
+                z <- subsetted$dailyConfirmed
+            }
+            else{
+                z <- subsetted$dailyRecovered
+            }
         }
         return(plot_ly(subsetted, 
                        type='choropleth', 
